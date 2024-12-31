@@ -1,15 +1,16 @@
+import { User } from "../models/user.models.js";
 import { fetchFromTMDB } from "../services/tmdb.services.js";
 
 export async function searchPerson(req, res) {
     const {query} = req.params;
-
+   
     try{
         const response = await fetchFromTMDB(`https://api.themoviedb.org/3/search/person?query=${query}&include_adult=false&language=en-US&page=1`);
         if(response.results.length === 0){
             res.status(404).json({success:false,message:"Person not found"});
         }
 
-        await findbyIdandUpdate(req.user._id,{
+        await User.findByIdAndUpdate(req.user._id,{
             $push:{
                 searchHistory:{
                     id:response.results[0].id,
@@ -34,7 +35,7 @@ export async function searchMovie(req, res) {
         if(response.results.length === 0){
             res.status(404).json({success:false,message:"Movie not found"});
         }
-        await findbyIdandUpdate(req.user._id,{
+        await User.findByIdAndUpdate(req.user._id,{
             $push:{
                 searchHistory:{
                     id:response.results[0].id,
@@ -61,7 +62,7 @@ export async function searchTv(req, res) {
             res.status(404).json({success:false,message:"Movie not found"});
         }
 
-        await findbyIdandUpdate(req.user._id,{
+        await User.findByIdAndUpdate(req.user._id,{
             $push:{
                 searchHistory:{
                     id:response.results[0].id,
@@ -89,6 +90,14 @@ export async function getSearchHistory(req, res) {
 }
 
 export async function removeItemfromSeachHistory(req, res) {
-    const {id} = req.params;
-    
+    let {id} = req.params;
+   id = parseInt(id);
+
+    try{
+        await User.findByIdAndUpdate(req.user._id,{$pull:{searchHistory:{_id:id}}});
+        res.status(200).json({success:true,message:"Item removed from search history"});
+    }catch(error){
+        console.log("error in removeItemfromSeachHistory",error.message);
+        res.status(500).json({sucess:false,message:"Internal server error"});
+    }
 }

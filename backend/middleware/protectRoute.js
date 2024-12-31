@@ -4,8 +4,9 @@ import { User } from "../models/user.models.js";
 
 export const protectRoute = async (req, res, next) => {
     try{
-        const token = req.cookies["jwt-netflix"];
-        console.log("Token: ", req.cookies["jwt-netflix"]);
+        
+        const token = req.cookies["jwt-netflix-n"];
+
 
         if(!token){
             return res.status(401).json({success:false,message:"token not found"});

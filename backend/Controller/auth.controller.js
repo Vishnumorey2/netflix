@@ -33,30 +33,37 @@ export async function signup(req, res) {
     const salt = bcryptjs.genSaltSync(10);
     const hash = bcryptjs.hashSync(password,salt);
 
+    const PROFILE_PICS = ["/avatar1.png", "/avatar2.png", "/avatar3.png"];
+
+    const image = PROFILE_PICS[Math.floor(Math.random() * PROFILE_PICS.length)];
+
     const newuser = new User({
       username:username,
       email:email,
       password:hash,
-      image:""
+      image:image,
     });
      
     
-        generateJwtToken(newuser._id, res);
+        const token = generateJwtToken(newuser._id, res);
+      //   res.cookie("jwt-netflix-n",token,{
+      //     httpOnly:true,
+      //     maxAge:15*24*60*60*1000,
+      //     sameSite:"lax",
+      //     secure:false,//ENV_VAR.NODE_ENV !== "development"
+      // });
         await newuser.save();
-
-        res.status(201).json({success:true, user: {...newuser._doc,password:""}});
+        
+        res.cookie('jwt-netflix',token).status(201).json({success:true, user: {...newuser._doc,password:""}});
    
 
    
     }catch(error){
-        console.log("signup error",error.message);
         res.status(500).json({success:false,message:"Internal server error"});
     }
 }
 
-export async function signin(req, res) {
-    res.send("signin route");
-}
+
 
 export async function login(req, res) {
   const {email,password} = req.body;
@@ -77,7 +84,7 @@ export async function login(req, res) {
         }
 
        
-          const ispasswordvalid = bcryptjs.compare(password,user.password);
+          const ispasswordvalid = await bcryptjs.compare(password,user.password);
         
         
 
@@ -85,13 +92,16 @@ export async function login(req, res) {
         return  res.status(400).json({success:false, message:"Invalid credentials"});
         }
 
-        generateJwtToken(user._id, res);
-
-             res.status(200).json({success:true, user: {...user._doc,password:""}});
+        const token = generateJwtToken(user._id, res);
+        res.cookie("jwt-netflix",token).status(200).json({success:true, user: {...user._doc,password:""}, token});
         }catch(error){
           console.log(error);
             res.status(500).json({success:false,message:"Internal server error"});
         }
+}
+
+export async function signin(req, res) {
+  res.send("signin route");
 }
 
 export async function logout(req, res) {
@@ -104,3 +114,12 @@ export async function logout(req, res) {
     
     }
     
+export async function authCheck(req, res) {
+    try{
+        res.status(200).json({success:true,user:req.user});
+    }catch(error){
+      console.log("error in authcheck controller",error);
+        res.send(500).json({success:false,message:"Internal server error"});
+    }
+    
+}
